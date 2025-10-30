@@ -35,7 +35,7 @@
       transition: background-color 0.3s ease;
     }
     button:hover { background-color: #0d47a1; }
-    input, textarea {
+    input {
       display: block;
       margin: 10px auto;
       padding: 10px;
@@ -59,12 +59,10 @@
   <h2>📅 Anniversaires du mois</h2>
   <div id="mois"></div>
 
-  <!-- 🔹 Voir tous les anniversaires -->
   <h2>📋 Liste complète</h2>
   <button onclick="voirAnniversaires()">Afficher</button>
-  <textarea id="resultatAnniversaires" readonly></textarea>
+  <div id="liste-complete"></div>
 
-  <!-- ➕ Ajouter un anniversaire -->
   <h2>➕ Ajouter un anniversaire</h2>
   <form onsubmit="ajouterAnniversaire(event)">
     <input type="text" id="prenom" placeholder="Prénom" required>
@@ -74,20 +72,15 @@
     <input type="email" id="contact_personnel" placeholder="Contact personnel">
     <button type="submit">Ajouter</button>
   </form>
-  <textarea id="resultatAjout" readonly></textarea>
 
-  <!-- 🗑️ Supprimer un anniversaire -->
   <h2>🗑️ Supprimer un anniversaire</h2>
   <form onsubmit="supprimerAnniversaire(event)">
     <input type="text" id="nomASupprimer" placeholder="Nom à supprimer" required>
     <button type="submit">Supprimer</button>
   </form>
-  <textarea id="resultatSuppression" readonly></textarea>
 
-  <!-- 📅 Télécharger le fichier ICS -->
   <button onclick="telechargerICS()">📅 Télécharger les mises à jour</button>
 
-  <!-- Script principal -->
   <script>
     const baseURL = "https://anniversaire-alertes-api.onrender.com";
 
@@ -95,7 +88,23 @@
       fetch(`${baseURL}/anniversaires`)
         .then(res => res.json())
         .then(data => {
-          document.getElementById("resultatAnniversaires").value = JSON.stringify(data, null, 2);
+          afficherAnniversairesSemaine(data);
+          afficherAnniversairesMois(data);
+
+          const zone = document.getElementById("liste-complete");
+          zone.innerHTML = "";
+
+          data.forEach(p => {
+            const bloc = document.createElement("div");
+            bloc.className = "alerte";
+            bloc.innerHTML = `
+              <p><strong>${p.prenom} ${p.nom}</strong></p>
+              <p>🎂 Né(e) le : ${p.date_naissance}</p>
+              ${p.contact_parent ? `<p>👨‍👩‍👧 Parent : ${p.contact_parent}</p>` : ""}
+              ${p.contact_personnel ? `<p>📱 Personnel : ${p.contact_personnel}</p>` : ""}
+            `;
+            zone.appendChild(bloc);
+          });
         })
         .catch(err => alert("Erreur : " + err));
     }
@@ -116,7 +125,8 @@
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById("resultatAjout").value = JSON.stringify(data, null, 2);
+        alert("✅ Anniversaire ajouté !");
+        voirAnniversaires();
       })
       .catch(err => alert("Erreur : " + err));
     }
@@ -131,13 +141,58 @@
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById("resultatSuppression").value = JSON.stringify(data, null, 2);
+        alert("🗑️ Suppression effectuée !");
+        voirAnniversaires();
       })
       .catch(err => alert("Erreur : " + err));
     }
 
     function telechargerICS() {
-      window.location.href = `${baseURL}/telecharger`; // à adapter selon ta route .ics
+      window.location.href = `${baseURL}/telecharger`;
+    }
+
+    function afficherAnniversairesSemaine(donnees) {
+      const aujourdHui = new Date();
+      const jourSemaine = aujourdHui.getDay();
+      const debutSemaine = new Date(aujourdHui);
+      debutSemaine.setDate(aujourdHui.getDate() - (jourSemaine === 0 ? 6 : jourSemaine - 1));
+      const finSemaine = new Date(debutSemaine);
+      finSemaine.setDate(debutSemaine.getDate() + 6);
+
+      const alertesSemaine = donnees.filter(p => {
+        if (!p.date_naissance) return false;
+        const [jour, mois] = p.date_naissance.split("/");
+        const date = new Date(new Date().getFullYear(), mois - 1, jour);
+        return date >= debutSemaine && date <= finSemaine;
+      });
+
+      const zone = document.getElementById("semaines");
+      zone.innerHTML = alertesSemaine.length
+        ? alertesSemaine.map(p => `
+            <div class="alerte">
+              <p>🎂 ${p.prenom} ${p.nom} — ${p.date_naissance}</p>
+              ${p.contact_personnel ? `<p>📱 ${p.contact_personnel}</p>` : ""}
+            </div>
+          `).join("")
+        : "<p>Aucun anniversaire cette semaine.</p>";
+    }
+
+    function afficherAnniversairesMois(donnees) {
+      const moisActuel = new Date().getMonth() + 1;
+      const alertesMois = donnees.filter(p => {
+        if (!p.date_naissance) return false;
+        const [, mois] = p.date_naissance.split("/");
+        return parseInt(mois) === moisActuel;
+      });
+
+      const zone = document.getElementById("mois");
+      zone.innerHTML = alertesMois.length
+        ? alertesMois.map(p => `
+            <div class="alerte">
+              <p>📅 ${p.prenom} ${p.nom} — ${p.date_naissance}</p>
+            </div>
+          `).join("")
+        : "<p>Aucun anniversaire ce mois-ci.</p>";
     }
   </script>
 

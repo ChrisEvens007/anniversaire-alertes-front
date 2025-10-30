@@ -135,6 +135,26 @@ function afficherAnniversairesMois(donnees) {
     : "<p>Aucun anniversaire ce mois-ci.</p>";
 }
 
+// ✅ Affiche la liste complète
+function afficherListeComplete(donnees) {
+  const zone = document.getElementById("liste-complete");
+  if (!zone) return;
+
+  zone.innerHTML = "";
+
+  donnees.forEach(p => {
+    const bloc = document.createElement("div");
+    bloc.className = "alerte";
+    bloc.innerHTML = `
+      <p><strong>${p.prenom} ${p.nom}</strong></p>
+      <p>🎂 Né(e) le : ${p.date_naissance}</p>
+      ${p.contact_parent ? `<p>👨‍👩‍👧 Parent : ${p.contact_parent}</p>` : ""}
+      ${p.contact_personnel ? `<p>📱 Personnel : ${p.contact_personnel}</p>` : ""}
+    `;
+    zone.appendChild(bloc);
+  });
+}
+
 // ✅ Téléchargement ICS filtré
 function telechargerICS() {
   const date = prompt("Entrez la date de mise à jour (YYYY-MM-DD) :", "2025-10-01");
@@ -159,8 +179,16 @@ fetch(`${baseURL}/anniversaires`)
     verifierAnniversaires(donneesAnniversaires);
     afficherAnniversairesSemaine(donneesAnniversaires);
     afficherAnniversairesMois(donneesAnniversaires);
+    afficherListeComplete(donneesAnniversaires);
   })
   .catch((error) => {
     console.error("Erreur de chargement depuis l'API :", error);
     afficherErreur("❌ Impossible de charger les données depuis le serveur.");
   });
+
+// ✅ Affichage manuel via bouton
+function voirAnniversaires() {
+  afficherAnniversairesSemaine(donneesAnniversaires);
+  afficherAnniversairesMois(donneesAnniversaires);
+  afficherListeComplete(donneesAnniversaires);
+}
