@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alertes Anniversaires</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 20px;
+      background: linear-gradient(to right, #e3f2fd, #ffffff);
+      color: #333;
+    }
+    h1 { color: #1565c0; text-align: center; font-size: 2em; margin-bottom: 30px; }
+    h2 { color: #0d47a1; margin-top: 40px; }
+    .alerte {
+      background-color: #e3f2fd;
+      border-left: 6px solid #2196f3;
+      padding: 15px 20px;
+      margin: 15px auto;
+      border-radius: 8px;
+      max-width: 600px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    .alerte p { margin: 6px 0; font-size: 1rem; }
+    a { color: #0d47a1; text-decoration: none; font-weight: bold; }
+    a:hover { text-decoration: underline; }
+    button {
+      display: block; margin: 30px auto;
+      background-color: #1976d2;
+      color: white; border: none;
+      padding: 12px 24px; font-size: 1rem;
+      border-radius: 6px; cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover { background-color: #0d47a1; }
+    input, textarea {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  </style>
+</head>
+<body>
+
+  <h1>Alertes Anniversaires</h1>
+
+  <div id="alertes"></div>
+
+  <h2>🎂 Anniversaires de la semaine</h2>
+  <div id="semaines"></div>
+
+  <h2>📅 Anniversaires du mois</h2>
+  <div id="mois"></div>
+
+  <!-- 🔹 Voir tous les anniversaires -->
+  <h2>📋 Liste complète</h2>
+  <button onclick="voirAnniversaires()">Afficher</button>
+  <textarea id="resultatAnniversaires" readonly></textarea>
+
+  <!-- ➕ Ajouter un anniversaire -->
+  <h2>➕ Ajouter un anniversaire</h2>
+  <form onsubmit="ajouterAnniversaire(event)">
+    <input type="text" id="prenom" placeholder="Prénom" required>
+    <input type="text" id="nom" placeholder="Nom" required>
+    <input type="date" id="date_naissance" required>
+    <input type="email" id="contact_parent" placeholder="Contact parent">
+    <input type="email" id="contact_personnel" placeholder="Contact personnel">
+    <button type="submit">Ajouter</button>
+  </form>
+  <textarea id="resultatAjout" readonly></textarea>
+
+  <!-- 🗑️ Supprimer un anniversaire -->
+  <h2>🗑️ Supprimer un anniversaire</h2>
+  <form onsubmit="supprimerAnniversaire(event)">
+    <input type="text" id="nomASupprimer" placeholder="Nom à supprimer" required>
+    <button type="submit">Supprimer</button>
+  </form>
+  <textarea id="resultatSuppression" readonly></textarea>
+
+  <!-- 📅 Télécharger le fichier ICS -->
+  <button onclick="telechargerICS()">📅 Télécharger les mises à jour</button>
+
+  <!-- Script principal -->
+  <script>
+    const baseURL = "https://anniversaire-alertes-api.onrender.com";
+
+    function voirAnniversaires() {
+      fetch(`${baseURL}/anniversaires`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("resultatAnniversaires").value = JSON.stringify(data, null, 2);
+        })
+        .catch(err => alert("Erreur : " + err));
+    }
+
+    function ajouterAnniversaire(event) {
+      event.preventDefault();
+      const body = {
+        prenom: document.getElementById("prenom").value,
+        nom: document.getElementById("nom").value,
+        date_naissance: document.getElementById("date_naissance").value,
+        contact_parent: document.getElementById("contact_parent").value,
+        contact_personnel: document.getElementById("contact_personnel").value
+      };
+      fetch(`${baseURL}/ajouter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("resultatAjout").value = JSON.stringify(data, null, 2);
+      })
+      .catch(err => alert("Erreur : " + err));
+    }
+
+    function supprimerAnniversaire(event) {
+      event.preventDefault();
+      const body = { nom: document.getElementById("nomASupprimer").value };
+      fetch(`${baseURL}/supprimer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("resultatSuppression").value = JSON.stringify(data, null, 2);
+      })
+      .catch(err => alert("Erreur : " + err));
+    }
+
+    function telechargerICS() {
+      window.location.href = `${baseURL}/telecharger`; // à adapter selon ta route .ics
+    }
+  </script>
+
+</body>
+</html>
